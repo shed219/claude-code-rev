@@ -115,7 +115,10 @@ export function isAnthropicAuthEnabled(): boolean {
   const is3P =
     isEnvTruthy(process.env.CLAUDE_CODE_USE_BEDROCK) ||
     isEnvTruthy(process.env.CLAUDE_CODE_USE_VERTEX) ||
-    isEnvTruthy(process.env.CLAUDE_CODE_USE_FOUNDRY)
+    isEnvTruthy(process.env.CLAUDE_CODE_USE_FOUNDRY) ||
+    // OpenAI-compatible mode uses its own auth (OPENAI_API_KEY)
+    isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI) ||
+    Boolean(process.env.OPENAI_API_KEY)
 
   // Check if user has configured an external API key source
   // This allows externally-provided API keys to work (without requiring proxy configuration)

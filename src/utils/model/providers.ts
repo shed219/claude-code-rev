@@ -1,16 +1,27 @@
 import type { AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from '../../services/analytics/index.js'
 import { isEnvTruthy } from '../envUtils.js'
 
-export type APIProvider = 'firstParty' | 'bedrock' | 'vertex' | 'foundry'
+export type APIProvider = 'firstParty' | 'bedrock' | 'vertex' | 'foundry' | 'openai'
+
+/**
+ * Returns true when the runtime should use an OpenAI-compatible API endpoint.
+ * Triggered by either:
+ *   - OPENAI_API_KEY being set, or
+ *   - CLAUDE_CODE_USE_OPENAI=true (for endpoints that use a non-Bearer auth mechanism)
+ */
+export function isOpenAICompatMode(): boolean {
+  return (
+    isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI) ||
+    Boolean(process.env.OPENAI_API_KEY)
+  )
+}
 
 export function getAPIProvider(): APIProvider {
-  return isEnvTruthy(process.env.CLAUDE_CODE_USE_BEDROCK)
-    ? 'bedrock'
-    : isEnvTruthy(process.env.CLAUDE_CODE_USE_VERTEX)
-      ? 'vertex'
-      : isEnvTruthy(process.env.CLAUDE_CODE_USE_FOUNDRY)
-        ? 'foundry'
-        : 'firstParty'
+  if (isEnvTruthy(process.env.CLAUDE_CODE_USE_BEDROCK)) return 'bedrock'
+  if (isEnvTruthy(process.env.CLAUDE_CODE_USE_VERTEX)) return 'vertex'
+  if (isEnvTruthy(process.env.CLAUDE_CODE_USE_FOUNDRY)) return 'foundry'
+  if (isOpenAICompatMode()) return 'openai'
+  return 'firstParty'
 }
 
 export function getAPIProviderForStatsig(): AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS {
