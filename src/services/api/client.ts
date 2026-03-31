@@ -15,6 +15,7 @@ import { getSmallFastModel } from 'src/utils/model/model.js'
 import {
   getAPIProvider,
   isFirstPartyAnthropicBaseUrl,
+  isOpenAICompatMode,
 } from 'src/utils/model/providers.js'
 import { getProxyFetchOptions } from 'src/utils/proxy.js'
 import {
@@ -28,6 +29,7 @@ import {
   getVertexRegionForModel,
   isEnvTruthy,
 } from '../../utils/envUtils.js'
+import { createOpenAICompatClient } from './openai-compat.js'
 
 /**
  * Environment variables for different client types:
@@ -128,6 +130,14 @@ export async function getAnthropicClient({
     defaultHeaders['x-anthropic-additional-protection'] = 'true'
   }
 
+  const resolvedFetch = buildFetch(fetchOverride, source)
+
+  // OpenAI-compatible API — return early before performing Anthropic-specific auth
+  if (isOpenAICompatMode()) {
+    logForDebugging('[API:client] Using OpenAI-compatible API client')
+    return createOpenAICompatClient() as Anthropic
+  }
+
   logForDebugging('[API:auth] OAuth token check starting')
   await checkAndRefreshOAuthTokenIfNeeded()
   logForDebugging('[API:auth] OAuth token check complete')
@@ -135,8 +145,6 @@ export async function getAnthropicClient({
   if (!isClaudeAISubscriber()) {
     await configureApiKeyHeaders(defaultHeaders, getIsNonInteractiveSession())
   }
-
-  const resolvedFetch = buildFetch(fetchOverride, source)
 
   const ARGS = {
     defaultHeaders,
